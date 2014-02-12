@@ -89,7 +89,7 @@ function getBlocks()
 
 		if (parsedBlocks >= result)
 		{
-			setTimeout(10000, getBlocks);
+			setTimeout(getBlocks, 10000);
 			return;
 		}
 		parsedBlocks++;
