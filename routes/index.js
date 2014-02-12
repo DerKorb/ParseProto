@@ -6,98 +6,127 @@ exports.index = function(req, res){
 	res.render('index', { title: 'Express' });
 };
 
-exports.data = function(req, res){
-	result = {blocknum: parsedBlocks, blocktime: blockTime, balances: [], supply: 0};
-	for(key in addresses)
+exports.ptsJson = function(req, res){
+    var timestamp = false;
+    var dateParts = req.query.date.split("-");
+    timestamp = new Date(dateParts[2],dateParts[0],dateParts[1]).getTime()/1000;
+	result = {blocknum: parsedBlocks, blocktime: currentBlockTime, balances: [], supply: 0};
+	for(key in timestamp ? pts_addresses.filter : pts_addresses)
 	{
-		result.supply+=addresses[key];
+		result.supply+=pts_addresses[key];
 		address = {};
-		address[key] = addresses[key];
+		address[key] = pts_addresses[key];
 		result.balances.push(address);
 	}
 	res.send(result);
 };
+
+exports.agsJson = function(req, res){
+}
+
+exports.genesisBlock = function(req, res){
+}
 
 var bitcoin = require('bitcoin');
 
 var client = new bitcoin.Client({
 	host: 'localhost',
 	port: 3838,
-	user: 'mytestuser',
+	user: 'protosharespc',
 	pass: 'alibabatrinktmeinenkaba!'
 });
 
-var async = require("async");
-var maxTx = 0;
-var blockCount = 0;
-var blocks = [];
-var parsedBlocks = -1;
-var blockTime = 0;
+var currentBlockCount = 0;
+var parsedBlocks = 0;
+var currentBlockTime = 0;
 
-var addresses = {};
+var pts_addresses = {};
+var ags_addresses = {};
 
-var getDecoded = function(err, result)
+function getNextBlock()
 {
-	if (err) return console.log(err);
-	result.vout.forEach(function(output)
-	{
-		if (!addresses[output.scriptPubKey.addresses])
-			addresses[output.scriptPubKey.addresses] = 0;
-		addresses[output.scriptPubKey.addresses]+=output.value;
-	});
-	if (++tx == maxTx)
-		return getBlocks();
-}
-
-var getRawTransaction = function(err, result)
-{
-	if (err)
-	{
-		if (++tx == maxTx)
-			return getBlocks();
-		return;
-	}
-	client.cmd('decoderawtransaction', result , getDecoded);
-}
-
-var getBlockHash = function(err, result)
-{
-	if (err)
-		return console.log(err);
-	client.cmd('getblock', result , getBlock);
-}
-
-var getBlock = function(err, result)
-{
-	//client.cmd('getrawtransaction', result , getBlockHash);
-	if (err)
-		return console.log(err);
-	maxTx = result.tx.length;
-	blockTime = result.time;
-	for (tx in result.tx)
-	{
-		client.cmd('getrawtransaction', result.tx[tx] , getRawTransaction);
-	}
-}
-
-function getBlocks()
-{
-	client.cmd('getblockcount', function (err, result)
+    // get number of blocks
+	client.cmd('getblockcount', function (err, block_count)
 	{
 		if (err)
 			return console.log(err);
 
-		if (parsedBlocks >= result)
-		{
-			setTimeout(getBlocks, 10000);
-			return;
-		}
+        // if we already parsed all blocks try again in 10 seconds
+		if (parsedBlocks >= block_count)
+			return setTimeout(getNextBlock, 10000);
+
 		parsedBlocks++;
-		blockCount = result;
+		currentBlockCount = block_count;
 		if (parsedBlocks%100==0)
 			console.log("block", parsedBlocks);
-		client.cmd('getblockhash', parsedBlocks, getBlockHash);
+
+		// get the block hash
+        client.cmd('getblockhash', parsedBlocks, function(err, block_hash)
+        {
+            if (err)
+                return console.log(err);
+            // get the block
+            client.cmd('getblock', block_hash , function(err, block_info)
+            {
+                if (err)
+                    return console.log(err);
+
+                // update current block time
+                currentBlockTime = block_info.time;
+
+                // get all transactions
+                var numTxFinished = 0;
+                for (tx in block_info.tx)
+                {
+                    client.cmd('getrawtransaction', block_info.tx[tx] , function(err, rawtransaction)
+                    {
+                        // if the transaction contains no unspent outputs it will give an error
+                        if (err)
+                        {
+                            // if we parsed all transaction continue with next block
+                            if (++numTxFinished == block_info.tx.length)
+                                getNextBlock(++parsedBlocks);
+                            // else wait for other transactions
+                            return;
+                        }
+
+                        // if the transaction contains unspent outputs parse them
+                        client.cmd('decoderawtransaction', rawtransaction , function(err, transaction_info)
+                        {
+                            if (err)
+                                return console.log(err);
+
+                            console.log(transaction_info);
+
+                            // all movements:
+                            for (i in transaction_info.vout)
+                            {
+                                output = transaction_info.vout[i];
+                                input = transaction_info.vin[i];
+                                // update protoshares
+                                console.log(input);
+                                if (!pts_addresses[output.scriptPubKey.addresses])
+                                    pts_addresses[output.scriptPubKey.addresses] = 0;
+                                if (output.value<0)
+                                    console.log(output.value);
+                                pts_addresses[output.scriptPubKey.addresses]+=output.value;
+
+                                // update angelsshares
+                                if (output.scriptPubKey.addresses = "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
+                                {
+
+                                }
+                            }
+                            // if we parsed all transaction continue with next block
+                            if (++numTxFinished == block_info.tx.length)
+                                getNextBlock(++parsedBlocks);
+                            // else wait for other transactions
+                        });
+                    });
+                }
+            });
+        });
 	});
 }
 
-getBlocks();
+getNextBlock();

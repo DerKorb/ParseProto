@@ -1,7 +1,20 @@
 extends layout
 
-
 block content
-  script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js")
-  h1
-  p Welcome to
+    script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js")
+    script(src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js")
+    script(src="/scripts/ui.js")
+    link(rel="stylesheet", href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css")
+    label Date
+    input#datepicker(type="text")
+    #selection
+        input#radioPts(type="radio", name="action", value="pts.json", checked="checked")
+        label(for="radioPts") protoshares balances
+        input#radioAgs(type="radio", name="action", value="ags.json")
+        label(for="radioAgs") angelshares balances
+        input#radioGen(type="radio", name="action", value="genesis")
+        label(for="radioGen") genesis block
+    button#go download
+    label Sample code:
+    pre#source
+
