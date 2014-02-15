@@ -2,15 +2,9 @@
  * GET home page.
  */
 async = require("async");
-mongoose = require("mongoose");
-mongoose.connect('mongodb://feinarbyte.de/protoparse');
-
-var user = "parse_user";
-var pass = "mQhURtm4qaLbsxl";
-
 mysql = require("mysql");
 connection = mysql.createConnection({
-    host: "feinarbyte.de",
+    host: "localhost",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
     database: "parse_db",

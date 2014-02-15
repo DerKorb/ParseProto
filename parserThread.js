@@ -5,8 +5,6 @@
  * GET home page.
  */
 async = require("async");
-mongoose = require("mongoose");
-mongoose.connect('mongodb://feinarbyte.de/protoparse');
 
 mysql = require("mysql");
 connection = mysql.createConnection({
