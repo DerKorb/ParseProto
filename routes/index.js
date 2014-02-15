@@ -5,6 +5,18 @@ async = require("async");
 mongoose = require("mongoose");
 mongoose.connect('mongodb://feinarbyte.de/protoparse');
 
+var user = "parse_user";
+var pass = "mQhURtm4qaLbsxl";
+
+mysql = require("mysql");
+connection = mysql.createConnection({
+    host: "feinarbyte.de",
+    user: "parse_user",
+    password: "mQhURtm4qaLbsxl",
+    multipleStatements: true
+});
+connection.connect();
+
 var Transaction = mongoose.model('Transaction', {
     address: {type: String, index: true},
     change: Number,
@@ -26,8 +38,6 @@ exports.index = function(req, res){
 };
 
 exports.ptsJson = function(req, res){
-
-
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2],dateParts[0]-1,dateParts[1]).getTime()/1000/86400-16014);
     Transaction.find({day: {$gt: day-1}}).sort({block: 1}).limit(1).exec(function(err, result)
@@ -82,25 +92,56 @@ exports.ptsJson = function(req, res){
 
 exports.agsJson = function(req, res){
     var dateParts = req.query.date.split("-");
-    var timestamp = new Date(dateParts[2],dateParts[0],dateParts[1]).getTime()/1000;
-    result = {blocknum: parsedBlocks, blocktime: currentBlockTime, balances: [], supply: 0};
-    for (address in pts_addresses)
+    var day = Math.floor(new Date(dateParts[2],dateParts[0]-1,dateParts[1]).getTime()/1000/86400-16014);
+    console.log(day);
+    Donation.find({day: {$gt: day-1}}).sort({block: 1}).limit(1).exec(function(err, result)
     {
-        var sum = 0;
-        pts_addresses[address].ags_donations.forEach(function(ags_donation)
+        if (err)
+            console.log(err);
+        if(result.length == 0)
+            return res.end("date is in the future");
+        Donation.aggregate([
+            {
+                $match: {
+                    'block': {$lt: result[0].block}
+                }
+            },
+            {
+                $group: {
+                    _id: '$address',
+                    block: {$max: '$block'},
+                    time: {$max: '$time'},
+                    balance: { $sum: '$amount' }
+                }
+            },
+            {
+                $sort: {
+                    _id: 1
+                }
+            }
+        ], function(err, results)
         {
-            if (ags_donation.time < timestamp)
-                sum += ags_donation.amount;
+            if(err)
+                throw(err);
+            var supply = 0;
+            var blocktime = 0;
+            var blockheight = 0;
+            var balances = [];
+            results.forEach(function(result){
+                console.log(result);
+                if (blocktime<result.time)
+                    blocktime = result.time;
+                if (blockheight<result.block)
+                    blockheight = result.block;
+                supply+=result.balance;
+                var addr = {};
+                addr[result._id] = result.balance;
+                if (result.balance>0)
+                    balances.push(addr);
+            });
+            res.send({supply: supply, blocktime: blocktime, blockheight: blockheight, balances: balances});
         });
-        paddress = {};
-        paddress[address] = sum;
-        if (sum>0)
-        {
-            result.balances.push(paddress)
-            result.supply += sum;
-        }
-    }
-    res.send(result);
+    });
 }
 
 exports.genesisBlock = function(req, res)

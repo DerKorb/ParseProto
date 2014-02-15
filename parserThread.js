@@ -8,6 +8,15 @@ async = require("async");
 mongoose = require("mongoose");
 mongoose.connect('mongodb://feinarbyte.de/protoparse');
 
+mysql = require("mysql");
+connection = mysql.createConnection({
+    host: "feinarbyte.de",
+    user: "parse_user",
+    password: "mQhURtm4qaLbsxl",
+    database: "parse_db"
+});
+connection.connect();
+
 var Transaction = mongoose.model('Transaction', {
     address: {type: String, index: true},
     change: Number,
@@ -40,6 +49,11 @@ var currentBlockTime = 0;
 var transactions = {};
 var pts_addresses = {};
 var ags_addresses = {};
+
+var coin = function(val)
+{
+    return Math.round(val*100000000);
+}
 
 function getNextBlock()
 {
@@ -113,6 +127,7 @@ function getNextBlock()
                                 // update database:
                                 if (pts_address.balance!=0)
                                 {
+                                    connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(-pts_address.balance)]);
                                     var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
                                     trans.save();
                                     pts_address.balance = 0;
@@ -134,15 +149,18 @@ function getNextBlock()
                                 pts_addresses[output_address].balance+=output.value;
                                 pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});
                                 // update database:
-                                var trans = new Transaction({address: output_address, change: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
-                                trans.save();
+                                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(output.value)]);
+                                /*var trans = new Transaction({address: output_address, change: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
+                                trans.save();*/
 
                                 // update ags
                                 if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
                                 {
                                     var donation_address = inputs[0].address;
+                                    connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES (?, ?, ?, ?, ?)", [donation_address, parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(output.value)]);
+                                    /*
                                     var donation = new Donation({address: donation_address, amount: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
-                                    donation.save();
+                                    donation.save();*/
 
                                 }
                             }
@@ -160,11 +178,12 @@ function getNextBlock()
     });
 }
 
-Transaction.remove({}, function(err, result)
+getNextBlock();
+
+/*Transaction.remove({}, function(err, result)
 {
     Donation.remove({}, function(err, result)
     {
-        getNextBlock();
     });
-});
+});*/
 
