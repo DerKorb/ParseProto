@@ -17,6 +17,11 @@ connection = mysql.createConnection({
 });
 connection.connect();
 
+function err(err) {
+    if (err)
+        throw(err);
+}
+
 var Transaction = mongoose.model('Transaction', {
     address: {type: String, index: true},
     change: Number,
@@ -55,6 +60,7 @@ var coin = function(val)
     return Math.round(val*100000000);
 }
 
+currentDay = 0;
 function getNextBlock()
 {
     // get number of blocks
@@ -71,8 +77,6 @@ function getNextBlock()
 
         block.height = parsedBlocks;
         currentBlockCount = block_count;
-        if (parsedBlocks%100==0)
-            console.log("block", parsedBlocks);
 
         // get the block hash
         client.cmd('getblockhash', parsedBlocks, function(err, block_hash)
@@ -89,6 +93,11 @@ function getNextBlock()
                 // update current block time
                 currentBlockTime = block_info.time;
                 block.time = block_info.time;
+                if (Math.ceil(block_info.time/86400-16015) > currentDay)
+                {
+                    currentDay++;
+                    console.log("Day:",currentDay);
+                }
 
                 // get all transactions
                 block.rawtransactions = [];
@@ -127,9 +136,9 @@ function getNextBlock()
                                 // update database:
                                 if (pts_address.balance!=0)
                                 {
-                                    connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(-pts_address.balance)]);
-                                    var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
-                                    trans.save();
+                                    connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, currentDay, coin(-pts_address.balance)], err);
+/*                                    var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: currentDay});
+                                    trans.save();*/
                                     pts_address.balance = 0;
                                 }
                             }
@@ -149,7 +158,7 @@ function getNextBlock()
                                 pts_addresses[output_address].balance+=output.value;
                                 pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});
                                 // update database:
-                                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(output.value)]);
+                                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, currentDay, coin(output.value)], err);
                                 /*var trans = new Transaction({address: output_address, change: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
                                 trans.save();*/
 
@@ -157,7 +166,7 @@ function getNextBlock()
                                 if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
                                 {
                                     var donation_address = inputs[0].address;
-                                    connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES (?, ?, ?, ?, ?)", [donation_address, parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(output.value)]);
+                                    connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES (?, ?, ?, ?, ?)", [donation_address, parsedBlocks, block_info.time, currentDay, coin(output.value)], err);
                                     /*
                                     var donation = new Donation({address: donation_address, amount: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
                                     donation.save();*/
