@@ -30,48 +30,53 @@ exports.ptsJson = function(req, res){
 
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2],dateParts[0]-1,dateParts[1]).getTime()/1000/86400-16014);
-    Transaction.aggregate([
-        {
-            $match: {
-                'day': {$lt: day}
-            }
-        },
-        {
-            $group: {
-                _id: '$address',
-                block: {$max: '$block'},
-                time: {$max: '$time'},
-                balance: { $sum: '$change' }
-            }
-        },
-        {
-            $sort: {
-                _id: 1
-            }
-        }
-    ], function(err, results)
+    Transaction.find({day: {$gt: day-1}}).sort({block: 1}).limit(1).exec(function(err, result)
     {
-        if(err)
-            throw(err);
-        var supply = 0;
-        var blocktime = 0;
-        var blockheight = 0;
-        var balances = [];
-        console.log(day);
-        console.log(results.length);
-        results.forEach(function(result){
-            console.log(result);
-            if (blocktime<result.time)
-                blocktime = result.time;
-            if (blockheight<result.block)
-                blockheight = result.block;
-            supply+=result.balance;
-            var addr = {};
-            addr[result._id] = result.balance;
-            if (result.balance>0)
-                balances.push(addr);
+        if (err)
+            console.log(err);
+        if(result.length == 0)
+            return res.end("date is in the future");
+        Transaction.aggregate([
+            {
+                $match: {
+                    'block': {$lt: result[0].block}
+                }
+            },
+            {
+                $group: {
+                    _id: '$address',
+                    block: {$max: '$block'},
+                    time: {$max: '$time'},
+                    balance: { $sum: '$change' }
+                }
+            },
+            {
+                $sort: {
+                    _id: 1
+                }
+            }
+        ], function(err, results)
+        {
+            if(err)
+                throw(err);
+            var supply = 0;
+            var blocktime = 0;
+            var blockheight = 0;
+            var balances = [];
+            results.forEach(function(result){
+                console.log(result);
+                if (blocktime<result.time)
+                    blocktime = result.time;
+                if (blockheight<result.block)
+                    blockheight = result.block;
+                supply+=result.balance;
+                var addr = {};
+                addr[result._id] = result.balance;
+                if (result.balance>0)
+                    balances.push(addr);
+            });
+            res.send({supply: supply, blocktime: blocktime, blockheight: blockheight, balances: balances});
         });
-        res.send({supply: supply, blocktime: blocktime, blockheight: blockheight, balances: balances});
     });
 };
 

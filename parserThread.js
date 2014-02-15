@@ -111,10 +111,16 @@ function getNextBlock()
                                 pts_address.transactions.push({change: -pts_address.balance, time: block_info.time});
 
                                 // update database:
-                                var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
-                                trans.save();
-                                pts_address.balance = 0;
+                                if (pts_address.balance!=0)
+                                {
+                                    var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
+                                    trans.save();
+                                    pts_address.balance = 0;
+                                }
                             }
+                        }
+                        for (var i = 0; i < Math.max(transaction_info.vin.length, transaction_info.vout.length); i++)
+                        {
                             var output = transaction_info.vout[i];
                             if (output)
                             {
