@@ -1,6 +1,16 @@
 /*
  * GET home page.
  */
+async = require("async");
+/*mongoose = require("mongoose");
+mongoose.connect('mongodb://protoparse');
+
+var transaction = mongoose.model({
+	address: String,
+	change: Number,
+	time: Number,
+	toAngel: Boolean
+});*/
 
 exports.index = function(req, res){
 	res.render('index', { title: 'Express' });
@@ -82,64 +92,52 @@ function getNextBlock()
                 // get all transactions
 	            block.rawtransactions = [];
 	            block.transactions = [];
-                for (tx in block_info.tx)
-                {
-	                var numTxFinished = 0;
-	                client.cmd('getrawtransaction', block_info.tx[tx] , function(err, rawtransaction)
+	            // Query this block's transaction infos before processing them
+                async.mapSeries(block_info.tx, function(txid, cb)
+	            {
+	                client.cmd('getrawtransaction', txid, function(err, rawtransaction)
                     {
-                        // if the transaction contains no unspent outputs it will give an error
-                        if (err)
-                        {
-                            // if we parsed all transaction continue with next block
-                            if (++numTxFinished == block_info.tx.length)
-                                getNextBlock(++parsedBlocks);
-                            // else wait for other transactions
-                            return;
-                        }
-	                    block.rawtransactions.push(rawtransaction);
-						//console.log(block);
-                        // if the transaction contains unspent outputs parse them
-                        client.cmd('decoderawtransaction', rawtransaction , function(err, transaction_info)
-                        {
-                            if (err)
-                                return console.log(err);
-
-	                        var outputs = [];
-	                        var inputs = [];
-                            for (i in transaction_info.vout)
-                            {
-                                var output = transaction_info.vout[i];
-	                            outputs.push({addresses: output.scriptPubKey.addresses, value: output.value});
-                                // update protoshares
-                            }
-                            for (i in transaction_info.vin)
-                            {
-                                var input = transaction_info.vin[i];
-	                            if (!input.txid || !transactions[input.txid])
-	                                continue;
-	                            if (!transactions[input.txid].outputs[input.vout])
-	                                console.log(transactions[input.txid].outputs, input.vout);
-	                            inputs.push({addresses: transactions[input.txid].outputs[input.vout].addresses});
-                            }
-	                        transactions[block_info.tx[tx]] = {inputs: inputs, outputs: outputs};
-
-	                        // update protoshares
-                            if (!pts_addresses[output.scriptPubKey.addresses])
-                                pts_addresses[output.scriptPubKey.addresses] = 0;
-                            pts_addresses[output.scriptPubKey.addresses]+=output.value;
-
-                            // update angelsshares
-                            if (output.scriptPubKey.addresses = "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
-                            {
-
-                            }
-                            // if we parsed all transaction continue with next block
-                            if (++numTxFinished == block_info.tx.length)
-                                getNextBlock(++parsedBlocks);
-                            // else wait for other transactions
-                        });
+                        client.cmd('decoderawtransaction', rawtransaction, cb);
                     });
-                }
+	            // process them
+                }, function(err, transactions)
+                {
+	                transactions.forEach(function(transaction_info)
+	                {
+		                var outputs = [];
+		                var inputs = [];
+		                var angelOutput = 0;
+		                transaction_info.vin.forEach(function(input)
+		                {
+			                if (!input.txid || !transactions[input.txid])
+				                return;
+			                if (!transactions[input.txid].outputs[input.vout])
+				                console.log(transactions[input.txid].outputs, input.vout);
+			                if (transactions[input.txid].outputs[input.vout].addresses.length > 1)
+			                    conole.log("more than one adresses in array");
+			                inputs.push({addresses: transactions[input.txid].outputs[input.vout].addresses});
+			                // update protoshares
+			                delete pts_addresses[transactions[input.txid].outputs[input.vout].addresses];
+		                });
+		                transaction_info.forEach(function(output)
+		                {
+			                outputs.push({addresses: output.scriptPubKey.addresses, value: output.value});
+			                if (output.scriptPubKey.addresses == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
+			                    angelOutput = output.value;
+			                // update protoshares
+			                if (!pts_addresses[output.scriptPubKey.addresses])
+				                pts_addresses[output.scriptPubKey.addresses] = {transactions: [], agsTransactions: [], balance: 0};
+			                pts_addresses[output.scriptPubKey.addresses].balance+=output.value;
+			                pts_addresses[output.scriptPubKey.addresses].transactions+=output.value;
+		                });
+		                transactions[transaction_info.txid] = {inputs: inputs, outputs: outputs};
+
+		                if (angelOutput>0)
+		                    console.log(inputs[0].addresses[0], "=>", angelOutput);
+
+	                });
+	                getNextBlock(++parsedBlocks);
+                });
             });
         });
 	});
