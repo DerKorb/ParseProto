@@ -32,7 +32,7 @@ var bitcoin = require('bitcoin');
 var client = new bitcoin.Client({
 	host: 'localhost',
 	port: 3838,
-	user: 'protosharespc',
+	user: 'mytestuser',
 	pass: 'alibabatrinktmeinenkaba!'
 });
 
@@ -40,12 +40,14 @@ var currentBlockCount = 0;
 var parsedBlocks = 0;
 var currentBlockTime = 0;
 
+var transactions = {};
 var pts_addresses = {};
 var ags_addresses = {};
 
 function getNextBlock()
 {
     // get number of blocks
+	var block = {};
 	client.cmd('getblockcount', function (err, block_count)
 	{
 		if (err)
@@ -56,6 +58,7 @@ function getNextBlock()
 			return setTimeout(getNextBlock, 10000);
 
 		parsedBlocks++;
+		block.height = parsedBlocks;
 		currentBlockCount = block_count;
 		if (parsedBlocks%100==0)
 			console.log("block", parsedBlocks);
@@ -66,6 +69,7 @@ function getNextBlock()
             if (err)
                 return console.log(err);
             // get the block
+	        block.hash = block_hash;
             client.cmd('getblock', block_hash , function(err, block_info)
             {
                 if (err)
@@ -73,12 +77,15 @@ function getNextBlock()
 
                 // update current block time
                 currentBlockTime = block_info.time;
+				block.time = block_info.time;
 
                 // get all transactions
-                var numTxFinished = 0;
+	            block.rawtransactions = [];
+	            block.transactions = [];
                 for (tx in block_info.tx)
                 {
-                    client.cmd('getrawtransaction', block_info.tx[tx] , function(err, rawtransaction)
+	                var numTxFinished = 0;
+	                client.cmd('getrawtransaction', block_info.tx[tx] , function(err, rawtransaction)
                     {
                         // if the transaction contains no unspent outputs it will give an error
                         if (err)
@@ -89,33 +96,42 @@ function getNextBlock()
                             // else wait for other transactions
                             return;
                         }
-
+	                    block.rawtransactions.push(rawtransaction);
+						//console.log(block);
                         // if the transaction contains unspent outputs parse them
                         client.cmd('decoderawtransaction', rawtransaction , function(err, transaction_info)
                         {
                             if (err)
                                 return console.log(err);
 
-                            console.log(transaction_info);
-
-                            // all movements:
+	                        var outputs = [];
+	                        var inputs = [];
                             for (i in transaction_info.vout)
                             {
-                                output = transaction_info.vout[i];
-                                input = transaction_info.vin[i];
+                                var output = transaction_info.vout[i];
+	                            outputs.push({addresses: output.scriptPubKey.addresses, value: output.value});
                                 // update protoshares
-                                console.log(input);
-                                if (!pts_addresses[output.scriptPubKey.addresses])
-                                    pts_addresses[output.scriptPubKey.addresses] = 0;
-                                if (output.value<0)
-                                    console.log(output.value);
-                                pts_addresses[output.scriptPubKey.addresses]+=output.value;
+                            }
+                            for (i in transaction_info.vin)
+                            {
+                                var input = transaction_info.vin[i];
+	                            if (!input.txid || !transactions[input.txid])
+	                                continue;
+	                            if (!transactions[input.txid].outputs[input.vout])
+	                                console.log(transactions[input.txid].outputs, input.vout);
+	                            inputs.push({addresses: transactions[input.txid].outputs[input.vout].addresses});
+                            }
+	                        transactions[block_info.tx[tx]] = {inputs: inputs, outputs: outputs};
 
-                                // update angelsshares
-                                if (output.scriptPubKey.addresses = "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
-                                {
+	                        // update protoshares
+                            if (!pts_addresses[output.scriptPubKey.addresses])
+                                pts_addresses[output.scriptPubKey.addresses] = 0;
+                            pts_addresses[output.scriptPubKey.addresses]+=output.value;
 
-                                }
+                            // update angelsshares
+                            if (output.scriptPubKey.addresses = "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
+                            {
+
                             }
                             // if we parsed all transaction continue with next block
                             if (++numTxFinished == block_info.tx.length)
