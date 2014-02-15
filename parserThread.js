@@ -110,6 +110,7 @@ function getNextBlock()
                                 return eachInputCallback(null);
 
                             var input_address = transactions[input.txid].outputs[input.vout].address;
+                            var input_value = transactions[input.txid].outputs[input.vout].value;
                             inputs.push({address: input_address});
 
                             // update protoshares
@@ -119,8 +120,8 @@ function getNextBlock()
                             // update database:
                             if (pts_address.balance!=0)
                             {
-                                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, currentDay, coin(-pts_address.balance)], eachInputCallback);
-                                pts_address.balance = 0;
+                                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, currentDay, coin(-input_value)], eachInputCallback);
+                                pts_address.balance -= input_value;
                             }
                             else
                                 eachInputCallback(null);
@@ -153,6 +154,7 @@ function getNextBlock()
 
                             }, function(err)
                             {
+
                                 transactions[transaction_info.txid] = {outputs: outputs};
                                 transactionCallback(err);
                             });

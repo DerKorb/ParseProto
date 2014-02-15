@@ -4,7 +4,7 @@
 async = require("async");
 mysql = require("mysql");
 connection = mysql.createConnection({
-    host: "localhost",
+    host: "feinarbyte.de",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
     database: "parse_db",
