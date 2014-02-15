@@ -25,7 +25,7 @@ var bitcoin = require('bitcoin');
 var client = new bitcoin.Client({
     host: 'localhost',
     port: 3838,
-    user: 'protosharespc',
+    user: 'mytestuser',
     pass: 'alibabatrinktmeinenkaba!'
 });
 
