@@ -10,7 +10,7 @@ mongoose.connect('mongodb://feinarbyte.de/protoparse');
 
 mysql = require("mysql");
 connection = mysql.createConnection({
-    host: "feinarbyte.de",
+    host: "localhost",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
     database: "parse_db"
@@ -137,8 +137,8 @@ function getNextBlock()
                             // update database:
                             if (pts_address.balance!=0)
                             {
-                                pts_address.balance = 0;
                                 connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, currentDay, coin(-pts_address.balance)], eachInputCallback);
+                                pts_address.balance = 0;
                             }
                             else
                                 eachInputCallback(null);
