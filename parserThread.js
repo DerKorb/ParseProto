@@ -8,7 +8,7 @@ async = require("async");
 
 mysql = require("mysql");
 connection = mysql.createConnection({
-    host: "localhost",
+    host: "feinarbyte.de",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
     database: "parse_db"
@@ -42,6 +42,9 @@ var coin = function(val)
     return Math.round(val*100000000);
 }
 
+var query1Values = [];
+var query2Values = [];
+
 currentDay = 0;
 function getNextBlock()
 {
@@ -54,8 +57,27 @@ function getNextBlock()
 
         // if we already parsed all blocks try again in 10 seconds
         if (parsedBlocks >= block_count)
-            return setTimeout(getNextBlock, 10000);
-
+        {
+            if (query1Values.length > 0)
+            {
+                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES ?", [query1Values], function(err, result)
+                {
+                    if (query2Values.length > 0)
+                    {
+                        connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES ?",[query2Values], function(err, result)
+                        {
+                            return setTimeout(getNextBlock, 10000);
+                        });
+                        query2Values = [];
+                    }
+                    else
+                        return setTimeout(getNextBlock, 10000);
+                });
+                query1Values = [];
+            }
+            else
+                return setTimeout(getNextBlock, 10000);
+        }
 
         block.height = parsedBlocks;
         currentBlockCount = block_count;
@@ -114,17 +136,19 @@ function getNextBlock()
                             inputs.push({address: input_address});
 
                             // update protoshares
-                            var pts_address = pts_addresses[input_address];
-                            pts_address.transactions.push({change: -pts_address.balance, time: block_info.time});
+                            //var pts_address = pts_addresses[input_address];
+                            //pts_address.transactions.push({change: -pts_address.balance, time: block_info.time});
 
                             // update database:
-                            if (pts_address.balance!=0)
-                            {
-                                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [input_address, parsedBlocks, block_info.time, currentDay, coin(-input_value)], eachInputCallback);
-                                pts_address.balance -= input_value;
-                            }
-                            else
-                                eachInputCallback(null);
+//                            if (pts_address.balance!=0)
+ //                           {
+                                //connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", , eachInputCallback);
+                                query1Values.push([input_address, parsedBlocks, block_info.time, currentDay, coin(-input_value)]);
+                                eachInputCallback();
+                                //pts_address.balance -= input_value;
+   //                         }
+     //                       else
+       //                         eachInputCallback(null);
 
                         }, function(err)
                         {
@@ -134,23 +158,26 @@ function getNextBlock()
                                 outputs.push({address: output_address, value: output.value});
 
                                 // update protoshares
-                                if (!pts_addresses[output_address])
+                                /*if (!pts_addresses[output_address])
                                     pts_addresses[output_address] = {transactions: [], ags_donations: [], balance: 0};
 
                                 pts_addresses[output_address].balance+=output.value;
-                                pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});
+                                pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});*/
 
+                                query1Values.push([output_address, parsedBlocks, block_info.time, currentDay, coin(output.value)]);
                                 // update database:
                                 if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
                                 {
                                     var donation_address = inputs[0].address;
-                                    connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?); " +
-                                        "INSERT INTO donations (address, block, time, day, 'amount') VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, currentDay, coin(output.value), donation_address, parsedBlocks, block_info.time, currentDay, coin(output.value)], eachOutputCallback);
+                                    query2Values.push([donation_address, parsedBlocks, block_info.time, currentDay, coin(output.value)]);
+                                    //connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?); " +
+                                     //   "INSERT INTO donations (address, block, time, day, 'amount') VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, currentDay, coin(output.value), donation_address, parsedBlocks, block_info.time, currentDay, coin(output.value)], eachOutputCallback);
                                 }
                                 else
                                 {
-                                    connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, currentDay, coin(output.value)], eachOutputCallback);
+                                    //connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", , eachOutputCallback);
                                 }
+                                eachOutputCallback();
 
                             }, function(err)
                             {
