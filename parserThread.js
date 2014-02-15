@@ -20,22 +20,6 @@ function err(err) {
         throw(err);
 }
 
-var Transaction = mongoose.model('Transaction', {
-    address: {type: String, index: true},
-    change: Number,
-    block: Number,
-    time: Number,
-    day: {type: Number, index: true}
-});
-
-var Donation = mongoose.model('Donation', {
-    address: {type: String, index: true},
-    amount: Number,
-    block: Number,
-    time: Number,
-    day: {type: Number, index: true}
-});
-
 var bitcoin = require('bitcoin');
 
 var client = new bitcoin.Client({
