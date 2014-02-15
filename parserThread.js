@@ -9,19 +9,19 @@ mongoose = require("mongoose");
 mongoose.connect('mongodb://feinarbyte.de/protoparse');
 
 var Transaction = mongoose.model('Transaction', {
-    address: String,
+    address: {type: String, index: true},
     change: Number,
     block: Number,
     time: Number,
-    day: Number,
+    day: {type: Number, index: true}
 });
 
 var Donation = mongoose.model('Donation', {
-    address: String,
+    address: {type: String, index: true},
     amount: Number,
     block: Number,
     time: Number,
-    day: Number,
+    day: {type: Number, index: true}
 });
 
 var bitcoin = require('bitcoin');
@@ -98,46 +98,49 @@ function getNextBlock()
                         var outputs = [];
                         var inputs = [];
                         var angelOutput = 0;
-                        transaction_info.vin.forEach(function(input)
+                        for (var i = 0; i < Math.max(transaction_info.vin.length, transaction_info.vout.length); i++)
                         {
-                            if (!input.txid) // ignore mined coins
-                                return;
-                            var input_address = transactions[input.txid].outputs[input.vout].address;
-                            inputs.push({address: input_address});
-
-                            // update protoshares
-                            var pts_address = pts_addresses[input_address];
-                            pts_address.transactions.push({change: -pts_address.balance, time: block_info.time});
-
-                            // update database:
-                            var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400)});
-                            trans.save();
-                            pts_address.balance = 0;
-                        });
-                        transaction_info.vout.forEach(function(output)
-                        {
-                            var output_address = output.scriptPubKey.addresses[0];
-                            outputs.push({address: output_address, value: output.value});
-
-                            // update protoshares
-                            if (!pts_addresses[output_address])
-                                pts_addresses[output_address] = {transactions: [], ags_donations: [], balance: 0};
-
-                            pts_addresses[output_address].balance+=output.value;
-                            pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});
-                            // update database:
-                            var trans = new Transaction({address: output_address, change: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
-                            trans.save();
-
-                            // update ags
-                            if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
+                            var input = transaction_info.vin[i];
+                            if (input && input.txid)
                             {
-                                var donation_address = inputs[0].address;
-                                var donation = new Donation({address: donation_address, amount: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
-                                donation.save();
+                                var input_address = transactions[input.txid].outputs[input.vout].address;
+                                inputs.push({address: input_address});
 
+                                // update protoshares
+                                var pts_address = pts_addresses[input_address];
+                                pts_address.transactions.push({change: -pts_address.balance, time: block_info.time});
+
+                                // update database:
+                                var trans = new Transaction({address: input_address, change: -pts_address.balance, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
+                                trans.save();
+                                pts_address.balance = 0;
                             }
-                        });
+                            var output = transaction_info.vout[i];
+                            if (output)
+                            {
+                                var output_address = output.scriptPubKey.addresses[0];
+                                outputs.push({address: output_address, value: output.value});
+
+                                // update protoshares
+                                if (!pts_addresses[output_address])
+                                    pts_addresses[output_address] = {transactions: [], ags_donations: [], balance: 0};
+
+                                pts_addresses[output_address].balance+=output.value;
+                                pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});
+                                // update database:
+                                var trans = new Transaction({address: output_address, change: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
+                                trans.save();
+
+                                // update ags
+                                if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
+                                {
+                                    var donation_address = inputs[0].address;
+                                    var donation = new Donation({address: donation_address, amount: output.value, block: parsedBlocks, time: block_info.time, day: Math.ceil(block_info.time/86400-16015)});
+                                    donation.save();
+
+                                }
+                            }
+                        }
                         transactions[transaction_info.txid] = {inputs: inputs, outputs: outputs};
 
                         if (angelOutput>0)
