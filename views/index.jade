@@ -4,6 +4,9 @@ block content
     script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js")
     script(src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js")
     script(src="/scripts/ui.js")
+    style.
+        h4 {margin-left: 20px}
+        pre {margin: 25px; padding: 20px; background-color: #FEFEED; border: 1px solid gray}
     link(rel="stylesheet", href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/flick/jquery-ui.css")
     #content(style="margin: auto; width: 700px; background-color: #F3F3F3; border: 1px solid black")
         center
@@ -49,13 +52,58 @@ block content
         center
             h3(style="color: white; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;") howto duplicate this server
         hr
-        ol
-            li setup mysql server
-            li install nodejs
-            li install git
-            li git clone https://github.com/DerKorb/ParseProto.git
-            li cd ParseProto
-            li npm install
-            li npm pm2 -g
-            li pm2 start parserThread.js
-            li pm2 start app.js
+        h4 setup mysql server, nodejs, protosharesd (or protosharesQt) and git
+        h4 edit ~/.protoshares/Protoshares.conf
+        pre.
+            rpcuser=mytestuser
+            txindex=1
+            reindex=1
+            server=1
+            rpcpassword=alibabatrinktmeinenkaba!
+        h4 create tables
+        pre.
+            CREATE TABLE IF NOT EXISTS `addresses` (
+                `address` char(34) NOT NULL,
+                `id` int(11) NOT NULL AUTO_INCREMENT,
+                PRIMARY KEY (`id`)
+            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=348922 ;
+
+            CREATE TABLE IF NOT EXISTS `donations` (
+                `address` int(11) NOT NULL,
+                `amount` decimal(39,16) NOT NULL,
+                `block` int(11) NOT NULL,
+                `time` int(12) NOT NULL,
+                `day` int(11) NOT NULL,
+                KEY `address` (`address`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+            CREATE TABLE IF NOT EXISTS `transactions2` (
+                `id_address` int(11) NOT NULL,
+                `change` bigint(40) NOT NULL,
+                `block` int(11) NOT NULL,
+                `time` bigint(40) NOT NULL,
+                `day` int(11) NOT NULL,
+                KEY `address` (`id_address`),
+                KEY `day` (`day`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        h4 install ParseProto
+        pre.
+            git clone https://github.com/DerKorb/ParseProto.git
+            cd ParseProto
+            npm install
+            npm pm2 -g
+        h4 change mysql setting ins parserThread.js and app.js
+        pre.
+            connection = mysql.createConnection({
+                host: "localhost",
+                user: "",
+                password: "",
+                database: ""
+            });
+        h4 start protosharesd (or protosharesQt)
+        h4 start the blockchain parser
+        pre.
+            pm2 start parserThread.js
+        h4 start the webserver (you might want to change the port in app.js)
+        pre.
+            pm2 start app.js
