@@ -42,12 +42,12 @@ exports.agsJson = function(req, res){
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2],dateParts[0]-1,dateParts[1]).getTime()/1000/86400-16014);
     connection.query(
-        "CREATE TEMPORARY TABLE IF NOT EXISTS ags_rates AS (SELECT SUM(`amount`/100000000) ags_rate, day as day2 FROM donations GROUP BY day); " +
-        "SELECT address, MAX(block) blockheight, MAX(time) time, SUM(`amount`)/ags_rate/20000 balance FROM donations JOIN ags_rates ON day = day2 WHERE day <= ? GROUP BY address;" +
+        "CREATE TEMPORARY TABLE IF NOT EXISTS ags_rates AS (SELECT SUM(`amount`/100000000) ags_rate, IF(day<57, 57, day) as day2 FROM donations GROUP BY IF(day<57, 57, day)); " +
+        "SELECT addresses.address, MAX(block) blockheight, MAX(time) time, SUM(`amount`)/ags_rate/20000 balance FROM donations JOIN ags_rates ON IF(day<57, 57, day) = day2 JOIN addresses ON donations.address = addresses.id WHERE day <= ? GROUP BY addresses.id ORDER BY addresses.address;" +
             "DROP TEMPORARY TABLE ags_rates", [day], function(err, block)
     {
         console.log(err, block);
-        var result = {blockheight: 0, time: 0, balances: [], supply: 0};
+        var result = {blockheight: 0, time: 0, supply: 0, balances: []};
         block[1].forEach(function(balance)
         {
             var addr = {};

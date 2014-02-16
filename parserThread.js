@@ -8,7 +8,7 @@ async = require("async");
 
 mysql = require("mysql");
 connection = mysql.createConnection({
-    host: "feinarbyte.de",
+    host: "localhost",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
     database: "parse_db"
@@ -99,9 +99,9 @@ function getNextBlock()
                 if (Math.ceil(block_info.time/86400-16015) > currentDay)
                 {
                     currentDay++;
+                    // Do "daily" bulk inserts for better performance
                     if (query1Values.length > 0)
                     {
-                        console.log(query1Values.pop());
                         connection.query("INSERT INTO transactions2 (id_address, block, time, day, `change`) VALUES ?", [query1Values], function(err, result)
                         {
                             if (err)
@@ -120,7 +120,7 @@ function getNextBlock()
                     }
                     if (query2Values.length > 0)
                     {
-                        connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES ?",[query2Values], function(err, result)
+                        connection.query("INSERT INTO donations (address, block, time, day, amount) VALUES ?",[query2Values], function(err, result)
                         {
                             if (err)
                                 console.log("q3", err);
