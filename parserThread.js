@@ -166,7 +166,7 @@ function getNextBlock() {
 }
 
 // on startup: empty database and start over filling the database
-connection.query("DELETE * FROM transactions2; DELETE * FROM donations; DELETE * FROM addresses", function (err, reuslt) {
+connection.query("DELETE FROM transactions2; DELETE FROM donations; DELETE FROM addresses", function (err, reuslt) {
     if (err)
         throw(err);
     getNextBlock();

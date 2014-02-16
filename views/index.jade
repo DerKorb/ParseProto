@@ -60,32 +60,33 @@ block content
             reindex=1
             server=1
             rpcpassword=alibabatrinktmeinenkaba!
-        h4 create tables
-        pre.
-            CREATE TABLE IF NOT EXISTS `addresses` (
-                `address` char(34) NOT NULL,
-                `id` int(11) NOT NULL AUTO_INCREMENT,
-                PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=348922 ;
+        h4 start protosharesd (or protosharesQt)
+        h4 create a database and these tables in mysql
+            pre.
+                CREATE TABLE IF NOT EXISTS `addresses` (
+                    `address` char(34) NOT NULL,
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=348922 ;
 
-            CREATE TABLE IF NOT EXISTS `donations` (
-                `address` int(11) NOT NULL,
-                `amount` decimal(39,16) NOT NULL,
-                `block` int(11) NOT NULL,
-                `time` int(12) NOT NULL,
-                `day` int(11) NOT NULL,
-                KEY `address` (`address`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                CREATE TABLE IF NOT EXISTS `donations` (
+                    `address` int(11) NOT NULL,
+                    `amount` decimal(39,16) NOT NULL,
+                    `block` int(11) NOT NULL,
+                    `time` int(12) NOT NULL,
+                    `day` int(11) NOT NULL,
+                    KEY `address` (`address`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-            CREATE TABLE IF NOT EXISTS `transactions2` (
-                `id_address` int(11) NOT NULL,
-                `change` bigint(40) NOT NULL,
-                `block` int(11) NOT NULL,
-                `time` bigint(40) NOT NULL,
-                `day` int(11) NOT NULL,
-                KEY `address` (`id_address`),
-                KEY `day` (`day`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                CREATE TABLE IF NOT EXISTS `transactions2` (
+                    `id_address` int(11) NOT NULL,
+                    `change` bigint(40) NOT NULL,
+                    `block` int(11) NOT NULL,
+                    `time` bigint(40) NOT NULL,
+                    `day` int(11) NOT NULL,
+                    KEY `address` (`id_address`),
+                    KEY `day` (`day`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
         h4 install ParseProto
         pre.
             git clone https://github.com/DerKorb/ParseProto.git
@@ -100,7 +101,6 @@ block content
                 password: "",
                 database: ""
             });
-        h4 start protosharesd (or protosharesQt)
         h4 start the blockchain parser
         pre.
             pm2 start parserThread.js
