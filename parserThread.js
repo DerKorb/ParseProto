@@ -167,7 +167,7 @@ function getNextBlock() {
 }
 
 // on startup: empty database and start over filling the database
-connection.query("TRUNCATE transactions2; TRUNCATE donations; TRUNCATE addresses", function (err, reuslt) {
+connection.query("TRUNCATE TABLE transactions2; TRUNCATE TABLE donations; TRUNCATE TABLE addresses", function (err, reuslt) {
     if (err)
         throw(err);
     getNextBlock();
