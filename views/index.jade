@@ -4,23 +4,58 @@ block content
     script(src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js")
     script(src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js")
     script(src="/scripts/ui.js")
-    link(rel="stylesheet", href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.css")
-    label Date
-    input#datepicker(type="text", value="02/06/2014")
-    label Supply
-    input#supply(type="text", value="1000000")
-    label Portion Ags
-    input#pts(type="text", value="0.1")
-    label Portion Pts
-    input#ags(type="text", value="0.1")
-    #selection
-        input#radioPts(type="radio", name="action", value="pts.json", checked="checked")
-        label(for="radioPts") protoshares balances
-        input#radioAgs(type="radio", name="action", value="ags.json")
-        label(for="radioAgs") angelshares balances
-        input#radioGen(type="radio", name="action", value="genesis")
-        label(for="radioGen") genesis block
-    button#go download
-    label Sample code:
-    pre#source
-
+    link(rel="stylesheet", href="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/flick/jquery-ui.css")
+    #content(style="margin: auto; width: 700px; background-color: #F3F3F3; border: 1px solid black")
+        center
+            h1(style="color: white; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;") crypto snapshots
+        hr
+        center
+            h3(style="color: white; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;") donwload daily distribution snapshots
+        hr
+        table(cellpadding="4", width="100%")
+            tr
+                td(width=150)
+                    label Supply
+                td
+                    input#supply(type="text", value="1000000")
+            tr
+                td
+                    label Portion Ags: 10%
+                td
+                    #sliderags
+            tr
+                td
+                    label Portion Pts: 10%
+                td
+                    #sliderpts
+            tr
+                td
+                    label Date
+                td
+                    input#datepicker(type="text", value="02/06/2014")
+            tr
+                td(colspan=2, align="center")
+                    #selection
+                        input#radioPts(type="radio", name="action", value="pts.json", checked="checked")
+                        label(for="radioPts") protoshares balances
+                        input#radioAgs(type="radio", name="action", value="ags.json")
+                        label(for="radioAgs") angelshares balances
+                        input#radioGen(type="radio", name="action", value="genesis")
+                        label(for="radioGen") genesis block
+            tr
+                td(colspan=2, align="center")
+                    button#go download
+        hr
+        center
+            h3(style="color: white; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;") howto duplicate this server
+        hr
+        ol
+            li setup mysql server
+            li install nodejs
+            li install git
+            li git clone https://github.com/DerKorb/ParseProto.git
+            li cd ParseProto
+            li npm install
+            li npm pm2 -g
+            li pm2 start parserThread.js
+            li pm2 start app.js

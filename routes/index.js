@@ -4,7 +4,7 @@
 async = require("async");
 mysql = require("mysql");
 connection = mysql.createConnection({
-    host: "localhost",
+    host: process.env.dbhost ? process.env.dbhost : "localhost",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
     database: "parse_db",
