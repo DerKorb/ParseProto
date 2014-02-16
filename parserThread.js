@@ -116,7 +116,7 @@ function getNextBlock()
                             if (err)
                                 console.log("q2", err);
                         });
-                        query1Values = [];
+                        query3Values = [];
                     }
                     if (query2Values.length > 0)
                     {
@@ -159,8 +159,6 @@ function getNextBlock()
                             if (!input.txid)
                                 return;
 
-                            if (!transactions[input.txid])
-                                console.log(block_transactions);
                             var input_address = transactions[input.txid].outputs[input.vout].address;
                             var input_value = transactions[input.txid].outputs[input.vout].value;
                             inputs.push({address: input_address});
@@ -180,9 +178,9 @@ function getNextBlock()
                         });
                         transactions[transaction_info.txid] = {outputs: outputs};
                     });
+                    parsedBlocks++;
+                    setImmediate(getNextBlock);
                 });
-                parsedBlocks++;
-                setImmediate(getNextBlock);
             });
         });
     });

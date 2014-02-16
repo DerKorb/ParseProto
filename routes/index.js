@@ -20,10 +20,11 @@ exports.ptsJson = function(req, res){
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2],dateParts[0]-1,dateParts[1]).getTime()/1000/86400-16014);
     console.log("queried");
-    connection.query("SELECT SUM(`change`)/100000000 supply, MAX(time) time, MAX(block) blockheight FROM transactions WHERE day <= ?;" +
-        "SELECT address, sum(`change`)/100000000 balance FROM transactions WHERE day <= ? GROUP BY address", [day, day], function(err, block)
+    connection.query("SELECT SUM(`change`)/100000000 supply, MAX(time) time, MAX(block) blockheight FROM transactions2 WHERE day <= ?;" +
+        "SELECT address, sum(`change`)/100000000 balance FROM transactions2 JOIN addresses ON id_address = id WHERE day <= ?  GROUP BY id_address HAVING balance>0", [day, day], function(err, block)
     {
-        console.log("result");
+        if(err)
+            throw(err);
         var result = block[0][0];
         result.balances = [];
         block[1].forEach(function(balance)
