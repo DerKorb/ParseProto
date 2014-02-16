@@ -14,7 +14,8 @@ connection = mysql.createConnection({
     host: "localhost",
     user: "parse_user",
     password: "mQhURtm4qaLbsxl",
-    database: "parse_db"
+    database: "parse_db",
+    multipleStatements: true
 });
 connection.connect();
 
