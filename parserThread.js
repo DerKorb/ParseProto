@@ -173,7 +173,7 @@ function getNextBlock()
                             if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
                             {
                                 var donation_address = inputs[0].address;
-                                query2Values.push([addressId(donation_address), parsedBlocks, block_info.time, currentDay, coin(output.value)]);
+                                query2Values.push([addressId(donation_address), parsedBlocks, block_info.time, Math.ceil(block_info.time/86400-16015), coin(output.value)]);
                             }
                         });
                         transactions[transaction_info.txid] = {outputs: outputs};
