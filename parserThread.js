@@ -2,7 +2,10 @@
  * Created by ksollner on 15.02.14.
  */
 /*
- * GET home page.
+ * This is the javascript file that pulls the transaction data from protosharesd via rpc
+ * and fills the sql database with it. You need this thread permanently to keep the database
+ * up to date. I recomment pm2(https://github.com/Unitech/pm2)
+ * You also need to setup the mysql server, database and tables and change the login data accordingly
  */
 async = require("async");
 
@@ -37,8 +40,6 @@ var parsedBlocks = 1;
 var currentBlockTime = 0;
 
 var transactions = {};
-var pts_addresses = {};
-var ags_addresses = {};
 
 var coin = function(val)
 {
@@ -186,12 +187,11 @@ function getNextBlock()
     });
 }
 
-getNextBlock();
-
-/*Transaction.remove({}, function(err, result)
+// on startup: empty database and start over filling the database
+connection.query("DELETE * FROM transactions2; DELETE * FROM donations; DELETE * FROM addresses", function(err, reuslt)
 {
-    Donation.remove({}, function(err, result)
-    {
-    });
-});*/
+    if(err)
+        throw(err);
+    getNextBlock();
+});
 
