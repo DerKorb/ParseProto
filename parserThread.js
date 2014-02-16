@@ -29,6 +29,9 @@ var client = new bitcoin.Client({
     pass: 'alibabatrinktmeinenkaba!'
 });
 
+var addresses = {};
+var addresscount = 0;
+
 var currentBlockCount = 0;
 var parsedBlocks = 1;
 var currentBlockTime = 0;
@@ -44,8 +47,22 @@ var coin = function(val)
 
 var query1Values = [];
 var query2Values = [];
+var query3Values = [];
+
 
 currentDay = 0;
+
+addressId = function(address)
+{
+    if (!addresses[address])
+    {
+        addresses[address]=++addresscount;
+        query3Values.push([address, addresscount]);
+        return addresscount;
+    }
+    return addresses[address];
+}
+
 function getNextBlock()
 {
     // get number of blocks
@@ -58,24 +75,6 @@ function getNextBlock()
         // if we already parsed all blocks try again in 10 seconds
         if (parsedBlocks >= block_count)
         {
-            if (query1Values.length > 0)
-            {
-                connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES ?", [query1Values], function(err, result)
-                {
-                    if (query2Values.length > 0)
-                    {
-                        connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES ?",[query2Values], function(err, result)
-                        {
-                            return setTimeout(getNextBlock, 10000);
-                        });
-                        query2Values = [];
-                    }
-                    else
-                        return setTimeout(getNextBlock, 10000);
-                });
-                query1Values = [];
-            }
-            else
                 return setTimeout(getNextBlock, 10000);
         }
 
@@ -100,6 +99,34 @@ function getNextBlock()
                 if (Math.ceil(block_info.time/86400-16015) > currentDay)
                 {
                     currentDay++;
+                    if (query1Values.length > 0)
+                    {
+                        console.log(query1Values.pop());
+                        connection.query("INSERT INTO transactions2 (id_address, block, time, day, `change`) VALUES ?", [query1Values], function(err, result)
+                        {
+                            if (err)
+                                console.log("q1", err);
+                        });
+                        query1Values = [];
+                    }
+                     if (query3Values.length > 0)
+                    {
+                        connection.query("INSERT INTO addresses (address, id) VALUES ?", [query3Values], function(err, result)
+                        {
+                            if (err)
+                                console.log("q2", err);
+                        });
+                        query1Values = [];
+                    }
+                    if (query2Values.length > 0)
+                    {
+                        connection.query("INSERT INTO donations (address, block, time, day, 'amount') VALUES ?",[query2Values], function(err, result)
+                        {
+                            if (err)
+                                console.log("q3", err);
+                        });
+                        query2Values = [];
+                    }
                     console.log("Day:",currentDay);
                 }
 
@@ -121,80 +148,41 @@ function getNextBlock()
                 {
                     if (err)
                         console.log(err);
-                    async.eachSeries(block_transactions, function(transaction_info, transactionCallback)
+
+                    block_transactions.forEach(function(transaction_info)
                     {
                         var outputs = [];
                         var inputs = [];
-                        async.eachSeries(transaction_info.vin, function(input, eachInputCallback)
+                        transaction_info.vin.forEach(function(input)
                         {
                             // ignore mined coins as inputs
                             if (!input.txid)
-                                return eachInputCallback(null);
+                                return;
 
+                            if (!transactions[input.txid])
+                                console.log(block_transactions);
                             var input_address = transactions[input.txid].outputs[input.vout].address;
                             var input_value = transactions[input.txid].outputs[input.vout].value;
                             inputs.push({address: input_address});
-
-                            // update protoshares
-                            //var pts_address = pts_addresses[input_address];
-                            //pts_address.transactions.push({change: -pts_address.balance, time: block_info.time});
-
-                            // update database:
-//                            if (pts_address.balance!=0)
- //                           {
-                                //connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", , eachInputCallback);
-                                query1Values.push([input_address, parsedBlocks, block_info.time, currentDay, coin(-input_value)]);
-                                eachInputCallback();
-                                //pts_address.balance -= input_value;
-   //                         }
-     //                       else
-       //                         eachInputCallback(null);
-
-                        }, function(err)
-                        {
-                            async.eachSeries(transaction_info.vout, function(output, eachOutputCallback)
-                            {
-                                var output_address = output.scriptPubKey.addresses[0];
-                                outputs.push({address: output_address, value: output.value});
-
-                                // update protoshares
-                                /*if (!pts_addresses[output_address])
-                                    pts_addresses[output_address] = {transactions: [], ags_donations: [], balance: 0};
-
-                                pts_addresses[output_address].balance+=output.value;
-                                pts_addresses[output_address].transactions.push({change: output.value, time: block_info.time});*/
-
-                                query1Values.push([output_address, parsedBlocks, block_info.time, currentDay, coin(output.value)]);
-                                // update database:
-                                if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
-                                {
-                                    var donation_address = inputs[0].address;
-                                    query2Values.push([donation_address, parsedBlocks, block_info.time, currentDay, coin(output.value)]);
-                                    //connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?); " +
-                                     //   "INSERT INTO donations (address, block, time, day, 'amount') VALUES (?, ?, ?, ?, ?)", [output_address, parsedBlocks, block_info.time, currentDay, coin(output.value), donation_address, parsedBlocks, block_info.time, currentDay, coin(output.value)], eachOutputCallback);
-                                }
-                                else
-                                {
-                                    //connection.query("INSERT INTO transactions (address, block, time, day, `change`) VALUES (?, ?, ?, ?, ?)", , eachOutputCallback);
-                                }
-                                eachOutputCallback();
-
-                            }, function(err)
-                            {
-
-                                transactions[transaction_info.txid] = {outputs: outputs};
-                                transactionCallback(err);
-                            });
+                            query1Values.push([addressId(input_address), parsedBlocks, block_info.time, currentDay, coin(-input_value)]);
                         });
-
-                    }, function(err)
+                        transaction_info.vout.forEach(function(output)
                         {
-                            if(err)
-                                console.log(err);
-                            getNextBlock(++parsedBlocks);
-                        }
-                    );
+                            var output_address = output.scriptPubKey.addresses[0];
+                            outputs.push({address: output_address, value: output.value});
+
+                            query1Values.push([addressId(output_address), parsedBlocks, block_info.time, currentDay, coin(output.value)]);
+                            if (output_address == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw")
+                            {
+                                var donation_address = inputs[0].address;
+                                query2Values.push([addressId(donation_address), parsedBlocks, block_info.time, currentDay, coin(output.value)]);
+                            }
+                        });
+                        transactions[transaction_info.txid] = {outputs: outputs};
+                    });
                 });
+                parsedBlocks++;
+                setImmediate(getNextBlock);
             });
         });
     });

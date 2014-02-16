@@ -19,9 +19,11 @@ exports.index = function(req, res){
 exports.ptsJson = function(req, res){
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2],dateParts[0]-1,dateParts[1]).getTime()/1000/86400-16014);
+    console.log("queried");
     connection.query("SELECT SUM(`change`)/100000000 supply, MAX(time) time, MAX(block) blockheight FROM transactions WHERE day <= ?;" +
         "SELECT address, sum(`change`)/100000000 balance FROM transactions WHERE day <= ? GROUP BY address", [day, day], function(err, block)
     {
+        console.log("result");
         var result = block[0][0];
         result.balances = [];
         block[1].forEach(function(balance)
@@ -30,6 +32,7 @@ exports.ptsJson = function(req, res){
            addr[balance.address] = balance.balance;
            result.balances.push(addr);
         });
+        console.log("send");
         res.send(result);
     });
 };
@@ -42,7 +45,7 @@ exports.agsJson = function(req, res){
         "SELECT address, MAX(block) blockheight, MAX(time) time, SUM(`amount`)/ags_rate/20000 balance FROM donations JOIN ags_rates ON day = day2 WHERE day <= ? GROUP BY address;" +
             "DROP TEMPORARY TABLE ags_rates", [day], function(err, block)
     {
-        console.log(err);
+        console.log(err, block);
         var result = {blockheight: 0, time: 0, balances: [], supply: 0};
         block[1].forEach(function(balance)
         {
