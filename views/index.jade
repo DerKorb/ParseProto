@@ -88,12 +88,12 @@ block content
                     KEY `address` (`id_address`),
                     KEY `day` (`day`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-        h4 install ParseProto
+        h4 install ParseProto and pm2 (node process manager, optional but very nice tool)
         pre.
             git clone https://github.com/DerKorb/ParseProto.git
             cd ParseProto
             npm install
-            npm pm2 -g
+            npm install pm2 -g
         h4 change mysql setting ins parserThread.js and app.js
         pre.
             connection = mysql.createConnection({
