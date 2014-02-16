@@ -21,6 +21,6 @@ $(function()
     $("#selection").buttonset();
     updateExample("pts.json");
     $("#go").button().click(function() {
-       location.href="/"+$('input[name=action]:checked').val()+"?date="+$("#datepicker").val().replace(/\//g, "-");
+       location.href="/"+$('input[name=action]:checked').val()+"?date="+$("#datepicker").val().replace(/\//g, "-")+($('input[name=action]:checked').val()=="genesis"?"&supply="+$("#supply").val()+"&portionPts="+$("#pts").val()+"&portionAgs="+$("#ags").val():"");
     });
 });
