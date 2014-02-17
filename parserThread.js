@@ -17,7 +17,7 @@ connection = mysql.createConnection({
     database: "parse_db",
     multipleStatements: true
 });
-connection.connect();
+//connection.connect();
 
 function err(err) {
     if (err)
@@ -167,9 +167,9 @@ function getNextBlock() {
 }
 
 // on startup: empty database and start over filling the database
-connection.query("TRUNCATE TABLE transactions2; TRUNCATE TABLE donations; TRUNCATE TABLE addresses", function (err, reuslt) {
+/*connection.query("TRUNCATE TABLE transactions2; TRUNCATE TABLE donations; TRUNCATE TABLE addresses", function (err, reuslt) {
     if (err)
         throw(err);
     getNextBlock();
-});
+});*/
 
