@@ -18,8 +18,8 @@ exports.index = function (req, res) {
 
 var generatePtsJson = function(day, callback)
 {
-    connection.query("SELECT CAST((`change`)/100000000 AS DECIMAL(17,8)) supply, MAX(time) time, MAX(block) blockheight FROM transactions2 WHERE day <= ?;" +
-        "SELECT address, CAST(sum(`change`)/100000000 AS DECIMAL(17,8) balance FROM transactions2 JOIN addresses ON id_address = id WHERE day <= ?  GROUP BY id_address HAVING balance>0", [day, day], function (err, block) {
+    connection.query("SELECT CAST(SUM(`change`)/100000000 AS DECIMAL(17,8)) supply, MAX(time) time, MAX(block) blockheight FROM transactions2 WHERE day <= ?;" +
+        "SELECT address, CAST(sum(`change`)/100000000 AS DECIMAL(17,8)) balance FROM transactions2 JOIN addresses ON id_address = id WHERE day <= ?  GROUP BY id_address HAVING balance>0", [day, day], function (err, block) {
         if (err)
             throw(err);
         var result = block[0][0];
@@ -49,7 +49,7 @@ queryAgs = function(day, cb)
 			"SELECT addresses_btc.address, MAX(block) blockheight, MAX(time) time, ROUND(SUM(`amount`*ags_rate), 8) balance FROM donations_btc JOIN ags_rates_btc ON IF(day<57, 57, day) = day2 JOIN addresses_btc ON donations_btc.address = addresses_btc.id WHERE day <= ? GROUP BY addresses_btc.id ORDER BY addresses_btc.address;", [day, day],cb);
 }
 
-var generatePtsJson = function(day, callback)
+var generateAgsJson = function(day, callback)
 {
     queryAgs(day, function (err, block) {
         var result = {supply: 0, balances: []};
