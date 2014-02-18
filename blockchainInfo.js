@@ -52,6 +52,8 @@ getBtsDonations = function()
 				{
 					tx.time = 1389828960;
 				}
+                if (!tx.time)
+                    console.log(tx.block_height);
 				var donation_amount = tx.out[i].value;
 				var time = tx.time;
 				var day = tx.time/86400-16015;
