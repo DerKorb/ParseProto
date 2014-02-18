@@ -72,7 +72,7 @@ exports.agsJson = function (req, res) {
     generatePtsJson(day, function(result) { res.send(result) });
 }
 
-var generateGenesisBlock = function(day, supply, portionAgs, portionPts, callback)
+var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callback)
 {
     queryAgs(day, function (err, ags_result) {
         connection.query("SELECT CAST(SUM(`change`)/100000000 AS DECIMAL(17,8)) supply, MAX(time) time, MAX(block) blockheight FROM transactions2 WHERE day <= ?;" +
@@ -86,7 +86,7 @@ var generateGenesisBlock = function(day, supply, portionAgs, portionPts, callbac
             pts_result[1].forEach(function (balance) {
                 if (!balances[balance.address])
                     balances[balance.address] = 0;
-                balances[balance.address] += supply * portionPts * balance.balance / pts_supply;
+                balances[balance.address] += _supply * portionPts * balance.balance / pts_supply;
             });
 
             ags_supply = (day - 56) * 5000;
@@ -94,12 +94,12 @@ var generateGenesisBlock = function(day, supply, portionAgs, portionPts, callbac
             ags_result[2].forEach(function (balance) {
                 if (!balances[balance.address])
                     balances[balance.address] = 0;
-                balances[balance.address] += supply * portionAgs * balance.balance / ags_supply;
+                balances[balance.address] += _supply * portionAgs * balance.balance / ags_supply;
             });
             ags_result[5].forEach(function (balance) {
                 if (!balances[balance.address])
                     balances[balance.address] = 0;
-                balances[balance.address] += supply * portionAgs * balance.balance / ags_supply;
+                balances[balance.address] += _supply * portionAgs * balance.balance / ags_supply;
             });
 
             for (address in balances)
