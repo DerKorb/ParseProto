@@ -94,7 +94,7 @@ block content
             cd ParseProto
             npm install
             npm install pm2 -g
-        h4 change mysql setting ins parserThread.js and app.js
+        h4 change mysql setting ins parserThread.js, blockchainInfo.js and app.js
         pre.
             connection = mysql.createConnection({
                 host: "localhost",
@@ -102,9 +102,12 @@ block content
                 password: "",
                 database: ""
             });
-        h4 start the blockchain parser
+        h4 start the bitshares bts blockchain parser
         pre.
             pm2 start parserThread.js
+        h4 start the bitcoin blockchain parser
+        pre.
+            pm2 start blockchainInfo.js
         h4 start the webserver (you might want to change the port in app.js)
         pre.
             pm2 start app.js
