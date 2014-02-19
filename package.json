@@ -10,6 +10,7 @@
         "jade": "*",
         "bitcoin": "*",
         "async": "*",
-        "mysql": "*"
+        "mysql": "*",
+        "cheerio": "*"
     }
 }

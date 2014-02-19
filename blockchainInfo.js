@@ -12,89 +12,68 @@ connection = mysql.createConnection({
 	multipleStatements: true
 });
 connection.connect();
-var query3Values = [];
+var btc_addresses = [];
 var addresses = {};
 var addresscount = 0;
 
+var coin = function (val) {
+    return Math.round(val * 100000000);
+}
 
 addressId = function (address) {
 	if (!addresses[address]) {
 		addresses[address] = ++addresscount;
-		query3Values.push([address, addresscount]);
+		btc_addresses.push([address, addresscount]);
 		return addresscount;
 	}
 	return addresses[address];
 }
 
+cheerio = require("cheerio");
 getBtsDonations = function()
 {
-	console.log(offset);
-	var req = http.get('http://blockchain.info/address/1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc?format=json&offset='+offset, function(res)
+    console.log("getting donations");
+	var req = http.get('http://blockexplorer.com/address/1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc', function(res)
 	{
 		var info = "";
 		res.on("data", function(chunk) {
 			info += chunk;
 		});
-		res.on("end", function() {
-			var txs = JSON.parse(info).txs;
-			txs.forEach(function(tx)
-			{
-				var donor_address = tx.inputs[0].prev_out.addr;
-				var i;
-				for (i = 0; i < tx.out.length; i++)
-				{
-					if (tx.out[i].addr == "1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc")
-						break;
-				}
-				if (!tx.out[i] || !typeof(tx.out[i].value) == "number")
-					return
-				if(!tx.time && tx.block_height == 280709)
-				{
-					tx.time = 1389828960;
-				}
-                if (!tx.time)
-                    return console.log(tx.block_height);
-				var donation_amount = tx.out[i].value;
-				var time = tx.time;
-				var day = tx.time/86400-16015;
-				if (typeof(time) != "number" || typeof(day) != "number" || typeof(donation_amount) != "number")
-					console.log(tx.out[i], typeof(donation_amount), donation_amount, time, day, tx);
-				donations.push([addressId(donor_address), donation_amount, time, day]);
+		res.on("end", function()
+        {
+            $ = cheerio.load(info);
+            var donations = [];
+            $(".txtable tr").each(function(i, v){
 
-			});
-			offset += txs.length;
-			if (txs.length==50)
-			{
-				setTimeout(getBtsDonations,1);
-			}
-			else
-			{
-				console.log(donations.length);
-				if (donations.length > 0) {
-					connection.query("INSERT INTO donations_btc (address, amount, time, day) VALUES ?", [donations], function (err, result) {
-						if (err)
-							console.log("q3", err);
-						console.log(result);
-						console.log("insert finished");
-					});
-					donations = [];
-				}
-				if (query3Values.length > 0) {
-					connection.query("INSERT INTO addresses_btc (address, id) VALUES ?", [query3Values], function (err, result) {
-						if (err)
-							console.log("q2", err);
-					});
-					query3Values = [];
-				}
-				setTimeout(getBtsDonations, 60000);
-			}
+                var donation_amount = coin($($(v).find("td")[2]).text());
+                var donor_address = $($(v).find("td")[4]).text().split("\n").filter(function(a) {return a.length>30})[0];
+                var time = new Date($($(v).find("td")[1]).text().match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/));
+                var day = time/1000/86400-16015;
+                if (donor_address)
+                {
+                    donations.push([addressId(donor_address), donation_amount, time, day]);
+                }
+            });
+            console.log(donations.length);
+            if (donations.length > 0) {
+                connection.query("TRUNCATE TABLE donations_btc; INSERT INTO donations_btc (address, amount, time, day) VALUES ?", [donations], function (err, result) {
+                    if (err)
+                        console.log("q3", err);
+                    console.log(result);
+                    console.log("insert finished");
+                });
+                donations = [];
+            }
+            if (btc_addresses.length > 0) {
+                connection.query("TRUNCATE TABLE addresses_btc; INSERT INTO addresses_btc (address, id) VALUES ?", [btc_addresses], function (err, result) {
+                    if (err)
+                        console.log("q2", err);
+                });
+                btc_addresses = [];
+            }
+            //setTimeout(getBtsDonations, 60*60*10000);
 		});
-	});
+    });
 }
 
-connection.query("TRUNCATE TABLE donations_btc; TRUNCATE TABLE addresses_btc", function (err) {
-    if (err)
-        throw(err);
-	getBtsDonations();
- });
-
+getBtsDonations();
