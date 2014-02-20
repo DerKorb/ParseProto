@@ -50,11 +50,11 @@ queryAgs = function(day, cb)
 {
 	connection.query(
 		"DROP TEMPORARY TABLE IF EXISTS ags_rates;" +
-			"CREATE TEMPORARY TABLE IF NOT EXISTS ags_rates AS (SELECT CAST(5000/SUM(`amount`) AS DECIMAL(39,30)) ags_rate, IF(day<57, 57, day) as day2 FROM donations GROUP BY IF(day<57, 57, day));" +
-			"SELECT addresses.address, MAX(block) blockheight, MAX(time) time, ROUND(SUM(`amount`*ags_rate), 8) balance FROM donations JOIN ags_rates ON IF(day<57, 57, day) = day2 JOIN addresses ON donations.address = addresses.id WHERE day <= ? GROUP BY addresses.id ORDER BY addresses.address;" +
+			"CREATE TEMPORARY TABLE IF NOT EXISTS ags_rates AS (SELECT CAST(5000/SUM(`amount`) AS DECIMAL(39,30)) ags_rate, IF(day<56, 56, day) as day2 FROM donations GROUP BY IF(day<56, 56, day));" +
+			"SELECT addresses.address, MAX(block) blockheight, MAX(time) time, ROUND(SUM(`amount`*ags_rate), 8) balance FROM donations JOIN ags_rates ON IF(day<56, 56, day) = day2 JOIN addresses ON donations.address = addresses.id WHERE day <= ? GROUP BY addresses.id ORDER BY addresses.address;" +
 			"DROP TEMPORARY TABLE IF EXISTS ags_rates_btc;" +
-			"CREATE TEMPORARY TABLE IF NOT EXISTS ags_rates_btc AS (SELECT CAST(5000/SUM(`amount`) AS DECIMAL(39,30)) ags_rate, IF(day<57, 57, day) as day2 FROM donations_btc GROUP BY IF(day<57, 57, day));" +
-			"SELECT addresses_btc.address, MAX(block) blockheight, MAX(time) time, ROUND(SUM(`amount`*ags_rate), 8) balance FROM donations_btc JOIN ags_rates_btc ON IF(day<57, 57, day) = day2 JOIN addresses_btc ON donations_btc.address = addresses_btc.id WHERE day <= ? GROUP BY addresses_btc.id ORDER BY addresses_btc.address;", [day, day],cb);
+			"CREATE TEMPORARY TABLE IF NOT EXISTS ags_rates_btc AS (SELECT CAST(5000/SUM(`amount`) AS DECIMAL(39,30)) ags_rate, IF(day<56, 56, day) as day2 FROM donations_btc GROUP BY IF(day<56, 56, day));" +
+			"SELECT addresses_btc.address, MAX(block) blockheight, MAX(time) time, ROUND(SUM(`amount`*ags_rate), 8) balance FROM donations_btc JOIN ags_rates_btc ON IF(day<56, 56, day) = day2 JOIN addresses_btc ON donations_btc.address = addresses_btc.id WHERE day <= ? GROUP BY addresses_btc.id ORDER BY addresses_btc.address;", [day, day],cb);
 }
 
 var generateAgsJson = function(day, callback)
