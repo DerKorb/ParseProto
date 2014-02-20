@@ -16,6 +16,8 @@ exports.index = function (req, res) {
     res.render('index', { title: 'Express' });
 };
 
+var AGS = 1, PTS = 0, GENESIS = 2;
+
 var generatePtsJson = function(day, callback)
 {
     connection.query("SELECT CAST(SUM(`change`)/100000000 AS DECIMAL(17,8)) supply, MAX(time) time, MAX(block) blockheight FROM transactions2 WHERE day <= ?;" +
@@ -35,7 +37,15 @@ var generatePtsJson = function(day, callback)
 exports.ptsJson = function (req, res) {
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
-    generatePtsJson(day, function(result) { res.send(result) });
+    if (day<=cachedDay)
+    {
+        connection.query("SELECT data FROM caches WHERE day = ? AND type = 0", function(err, result)
+        {
+            callback(JSON.parse(result[0].data));
+        });
+    }
+    else
+        generatePtsJson(day, function(result) { res.send(result) });
 };
 
 queryAgs = function(day, cb)
@@ -70,7 +80,15 @@ var generateAgsJson = function(day, callback)
 exports.agsJson = function (req, res) {
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
-    generateAgsJson(day, function(result) { res.send(result) });
+    if (day<=cachedDay)
+    {
+        connection.query("SELECT data FROM caches WHERE day = ? AND type = 1", function(err, result)
+        {
+            callback(JSON.parse(result[0].data));
+        });
+    }
+    else
+        generateAgsJson(day, function(result) { res.send(result) });
 }
 
 var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callback)
@@ -116,3 +134,33 @@ exports.genesisBlock = function (req, res) {
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
     generateGenesisBlock(day, req.query.supply, req.query.portionPts, req.query.portionAgs, function(result) { res.send(result) });
 }
+var cachedDay = -1;
+cacheADay = function()
+{
+    connection.query("SELECT MAX(day) cachedDay FROM caches ; SELECT MAX(day) parsedDay FROM donations ", function(err, results)
+    {
+        var parsedDay = results[1][0].parsedDay;
+        cachedDay = results[0][0].cachedDay;
+        if (cachedDay == null)
+            cachedDay = -1;
+
+        if (cachedDay == parsedDay)
+            return setTimeout(cacheADay, 60*60*1000); // hourly recheck
+        console.log(cachedDay+1, "of", parsedDay, "cached");
+        var day = cachedDay + 1;
+        console.log(day);
+        generateAgsJson(day, function(ags_result)
+        {
+            generatePtsJson(day, function(pts_result)
+            {
+                connection.query("INSERT INTO caches (type, day, data) VALUES ?", [[[PTS, day, JSON.stringify(pts_result)]]], function(err, result) {
+                    connection.query("INSERT INTO caches (type, day, data) VALUES ?", [[[AGS, day, JSON.stringify(ags_result)]]], function(err, result) {
+                        // timeout for keeping callstack clean:
+                        setTimeout(cacheADay, 1);
+                    });
+                });
+            });
+        });
+    });
+}
+cacheADay();
