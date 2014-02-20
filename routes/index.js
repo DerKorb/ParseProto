@@ -37,12 +37,10 @@ var generatePtsJson = function(day, callback)
 exports.ptsJson = function (req, res) {
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
+    console.log(day, cachedDay);
     if (day<=cachedDay)
     {
-        connection.query("SELECT data FROM caches WHERE day = ? AND type = 0", function(err, result)
-        {
-            callback(JSON.parse(result[0].data));
-        });
+        res.sendfile("cache/"+day+"_"+"pts.json");
     }
     else
         generatePtsJson(day, function(result) { res.send(result) });
@@ -82,10 +80,7 @@ exports.agsJson = function (req, res) {
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
     if (day<=cachedDay)
     {
-        connection.query("SELECT data FROM caches WHERE day = ? AND type = 1", function(err, result)
-        {
-            callback(JSON.parse(result[0].data));
-        });
+        res.sendfile("cache/"+day+"_"+"ags.json");
     }
     else
         generateAgsJson(day, function(result) { res.send(result) });
@@ -108,7 +103,7 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
                 balances[balance.address] += _supply * portionPts * balance.balance / pts_supply;
             });
 
-            ags_supply = (day - 56) * 5000;
+            ags_supply = (day - 55) * 10000;
             ags_result[2].forEach(function (balance) {
                 if (!balances[balance.address])
                     balances[balance.address] = 0;
@@ -120,7 +115,7 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
                 balances[balance.address] += _supply * portionAgs * balance.balance / ags_supply;
             });
 
-            result.balances.push(["FOUNDER", "10000"]);
+            result.balances.push(["FOUNDER", _supply * portionAgs * 10000 / ags_supply]);
             for (address in balances)
                 result.balances.push([address, balances[address]]);
             callback(result);
@@ -132,9 +127,40 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
 exports.genesisBlock = function (req, res) {
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
-    generateGenesisBlock(day, req.query.supply, req.query.portionPts, req.query.portionAgs, function(result) { res.send(result) });
+    console.log(day, cachedDay);
+    if (day<=cachedDay)
+    {
+        var _supply = req.query.supply, portionPts = req.query.portionPts, portionAgs = req.query.portionAgs
+        connection.query("SELECT data FROM caches WHERE day = ? ORDER BY type", [day], function(err, result)
+        {
+            var pts_result = JSON.parse(fs.readFileSync("cache/"+day+"_"+"pts.json"));
+            var ags_result = JSON.parse(fs.readFileSync("cache/"+day+"_"+"ags.json"));
+            ags_supply = (day - 55) * 5000;
+            var pts_supply = pts_result.supply;
+
+            var balances = {};
+            pts_result.balances.forEach(function (balance) {
+                if (!balances[balance[0]])
+                    balances[balance[0]] = 0;
+                balances[balance[0]] += _supply * portionPts * balance[1] / pts_supply;
+            });
+            ags_result.balances.forEach(function (balance) {
+                if (!balances[balance[0]])
+                    balances[balance[0]] = 0;
+                balances[balance[0]] += _supply * portionAgs * balance[1] / ags_supply;
+            });
+            var result = {balances: []};
+            for (address in balances)
+                result.balances.push([address, balances[address]]);
+
+            res.send(result);
+        });
+    }
+    else
+        generateGenesisBlock(day, req.query.supply, req.query.portionPts, req.query.portionAgs, function(result) { res.send(result) });
 }
 var cachedDay = -1;
+fs = require("fs");
 cacheADay = function()
 {
     connection.query("SELECT MAX(day) cachedDay FROM caches ; SELECT MAX(day) parsedDay FROM donations ", function(err, results)
@@ -153,8 +179,10 @@ cacheADay = function()
         {
             generatePtsJson(day, function(pts_result)
             {
-                connection.query("INSERT INTO caches (type, day, data) VALUES ?", [[[PTS, day, JSON.stringify(pts_result)]]], function(err, result) {
-                    connection.query("INSERT INTO caches (type, day, data) VALUES ?", [[[AGS, day, JSON.stringify(ags_result)]]], function(err, result) {
+                fs.writeFileSync("cache/"+day+"_"+"pts.json", JSON.stringify(pts_result));
+                connection.query("INSERT INTO caches (type, day) VALUES ?", [[[PTS, day]]], function(err, result) {
+                    fs.writeFileSync("cache/"+day+"_"+"ags.json", JSON.stringify(ags_result));
+                    connection.query("INSERT INTO caches (type, day) VALUES ?", [[[AGS, day]]], function(err, result) {
                         // timeout for keeping callstack clean:
                         setTimeout(cacheADay, 1);
                     });
