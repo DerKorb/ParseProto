@@ -52,7 +52,8 @@ queryAgs = function(day, cb)
 var generateAgsJson = function(day, callback)
 {
     queryAgs(day, function (err, block) {
-        var result = {supply: 0, balances: []};
+        var result = {supply: 10000, balances: []};
+        result.balances.push(["FOUNDER", "10000"]);
         block[2].forEach(function (balance) {
             result.supply += balance.balance;
             result.balances.push([balance.address, balance.balance]);
@@ -69,7 +70,7 @@ var generateAgsJson = function(day, callback)
 exports.agsJson = function (req, res) {
     var dateParts = req.query.date.split("-");
     var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
-    generatePtsJson(day, function(result) { res.send(result) });
+    generateAgsJson(day, function(result) { res.send(result) });
 }
 
 var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callback)
@@ -90,7 +91,6 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
             });
 
             ags_supply = (day - 56) * 5000;
-            var supply = 0;
             ags_result[2].forEach(function (balance) {
                 if (!balances[balance.address])
                     balances[balance.address] = 0;
@@ -102,6 +102,7 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
                 balances[balance.address] += _supply * portionAgs * balance.balance / ags_supply;
             });
 
+            result.balances.push(["FOUNDER", "10000"]);
             for (address in balances)
                 result.balances.push([address, balances[address]]);
             callback(result);
