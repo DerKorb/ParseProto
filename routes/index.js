@@ -135,7 +135,7 @@ exports.genesisBlock = function (req, res) {
         {
             var pts_result = JSON.parse(fs.readFileSync("cache/"+day+"_"+"pts.json"));
             var ags_result = JSON.parse(fs.readFileSync("cache/"+day+"_"+"ags.json"));
-            ags_supply = (day - 55) * 5000;
+            ags_supply = ags_result.supply;
             var pts_supply = pts_result.supply;
 
             var balances = {};

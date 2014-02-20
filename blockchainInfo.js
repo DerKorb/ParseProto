@@ -45,6 +45,8 @@ getBtsDonations = function()
             var donations = [];
             $(".txtable tr").each(function(i, v){
 
+                if ($($(v).find("td")[3]).text().trim() != "Received: Address")
+                    return;
                 var donation_amount = coin($($(v).find("td")[2]).text());
                 var donor_address = $($(v).find("td")[4]).text().split("\n").filter(function(a) {return a.length>30})[0];
                 var time = new Date($($(v).find("td")[1]).text().match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/));
