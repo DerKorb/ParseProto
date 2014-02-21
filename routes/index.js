@@ -36,7 +36,7 @@ var generatePtsJson = function(day, callback)
 
 exports.ptsJson = function (req, res) {
     var dateParts = req.query.date.split("-");
-    var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
+    var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16015) + 1;
     console.log(day, cachedDay);
     if (day<=cachedDay)
     {
@@ -77,7 +77,7 @@ var generateAgsJson = function(day, callback)
 
 exports.agsJson = function (req, res) {
     var dateParts = req.query.date.split("-");
-    var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
+    var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16015) + 1;
     if (day<=cachedDay)
     {
         res.sendfile("cache/"+day+"_"+"ags.json");
@@ -103,7 +103,7 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
                 balances[balance.address] += _supply * portionPts * balance.balance / pts_supply;
             });
 
-            ags_supply = (day - 55) * 10000;
+            ags_supply = (day - 54) * 10000;
             ags_result[2].forEach(function (balance) {
                 if (!balances[balance.address])
                     balances[balance.address] = 0;
@@ -126,7 +126,7 @@ var generateGenesisBlock = function(day, _supply, portionAgs, portionPts, callba
 
 exports.genesisBlock = function (req, res) {
     var dateParts = req.query.date.split("-");
-    var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16014) + 1;
+    var day = Math.floor(new Date(dateParts[2], dateParts[0] - 1, dateParts[1]).getTime() / 1000 / 86400 - 16015) + 1;
     console.log(day, cachedDay);
     if (day<=cachedDay)
     {

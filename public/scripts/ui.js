@@ -2,7 +2,7 @@ $(function () {
     //ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js
     $("#datepicker").datepicker({
         minDate: new Date(2013, 10, 5),
-        maxDate: 0
+        maxDate: -1
     });
     $("#selection").buttonset();
     $("#sliderags").slider({min: 0, max: 100, value: 10});
