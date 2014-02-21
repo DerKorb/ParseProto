@@ -50,7 +50,7 @@ getBtsDonations = function()
                 var donation_amount = coin($($(v).find("td")[2]).text());
                 var donor_address = $($(v).find("td")[4]).text().split("\n").filter(function(a) {return a.length>30})[0];
                 var time = new Date($($(v).find("td")[1]).text().match(/[0-9]{4}-[0-9]{2}-[0-9]{2}/));
-                var day = time/1000/86400-16015;
+                var day = time/1000/86400-16016;
                 if (donor_address)
                 {
                     donations.push([addressId(donor_address), donation_amount, time, day]);
@@ -73,7 +73,7 @@ getBtsDonations = function()
                 });
                 btc_addresses = [];
             }
-            //setTimeout(getBtsDonations, 60*60*10000);
+            setTimeout(getBtsDonations, 60*60*10000);
 		});
     });
 }
