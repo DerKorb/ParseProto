@@ -191,4 +191,4 @@ cacheADay = function()
         });
     });
 }
-//cacheADay();
+cacheADay();
