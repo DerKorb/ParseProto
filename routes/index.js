@@ -3,6 +3,7 @@
  */
 async = require("async");
 mysql = require("mysql");
+btc_parser = require("./blockchainInfo.js");
 connection = mysql.createConnection({
     host: process.env.dbhost ? process.env.dbhost : "localhost",
     user: "parse_user",
@@ -175,16 +176,19 @@ cacheADay = function()
         console.log(cachedDay+1, "of", parsedDay, "cached");
         var day = cachedDay + 1;
         console.log(day);
-        generateAgsJson(day, function(ags_result)
+        btc_parser.getBtsDonations(function()
         {
-            generatePtsJson(day, function(pts_result)
+            generateAgsJson(day, function(ags_result)
             {
-                fs.writeFileSync("cache/"+day+"_"+"pts.json", JSON.stringify(pts_result));
-                connection.query("INSERT INTO caches (type, day) VALUES ?", [[[PTS, day]]], function(err, result) {
-                    fs.writeFileSync("cache/"+day+"_"+"ags.json", JSON.stringify(ags_result));
-                    connection.query("INSERT INTO caches (type, day) VALUES ?", [[[AGS, day]]], function(err, result) {
-                        // timeout for keeping callstack clean:
-                        setTimeout(cacheADay, 1);
+                generatePtsJson(day, function(pts_result)
+                {
+                    fs.writeFileSync("cache/"+day+"_"+"pts.json", JSON.stringify(pts_result));
+                    connection.query("INSERT INTO caches (type, day) VALUES ?", [[[PTS, day]]], function(err, result) {
+                        fs.writeFileSync("cache/"+day+"_"+"ags.json", JSON.stringify(ags_result));
+                        connection.query("INSERT INTO caches (type, day) VALUES ?", [[[AGS, day]]], function(err, result) {
+                            // timeout for keeping callstack clean:
+                            setTimeout(cacheADay, 1);
+                        });
                     });
                 });
             });

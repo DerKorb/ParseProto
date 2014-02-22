@@ -30,7 +30,7 @@ addressId = function (address) {
 }
 
 cheerio = require("cheerio");
-getBtsDonations = function()
+getBtsDonations = function(callback)
 {
     console.log("getting donations");
 	var req = http.get('http://blockexplorer.com/address/1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc', function(res)
@@ -63,19 +63,19 @@ getBtsDonations = function()
                         console.log("q3", err);
                     console.log(result);
                     console.log("insert finished");
+                    if (btc_addresses.length > 0) {
+                        connection.query("TRUNCATE TABLE addresses_btc; INSERT INTO addresses_btc (address, id) VALUES ?", [btc_addresses], function (err, result) {
+                            if (err)
+                                console.log("q2", err);
+                            callback();
+                        });
+                        btc_addresses = [];
+                    }
                 });
                 donations = [];
             }
-            if (btc_addresses.length > 0) {
-                connection.query("TRUNCATE TABLE addresses_btc; INSERT INTO addresses_btc (address, id) VALUES ?", [btc_addresses], function (err, result) {
-                    if (err)
-                        console.log("q2", err);
-                });
-                btc_addresses = [];
-            }
-            setTimeout(getBtsDonations, 60*60*10000);
 		});
     });
 }
 
-getBtsDonations();
+exports.getBtsDonations = getBtsDonations;
