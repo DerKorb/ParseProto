@@ -3,7 +3,7 @@
  */
 async = require("async");
 mysql = require("mysql");
-btc_parser = require("./blockchainInfo.js");
+btc_parser = require("../blockchainInfo.js");
 connection = mysql.createConnection({
     host: process.env.dbhost ? process.env.dbhost : "localhost",
     user: "parse_user",
