@@ -11,6 +11,7 @@
         "bitcoin": "*",
         "async": "*",
         "mysql": "*",
-        "cheerio": "*"
+        "cheerio": "*",
+        "cron": "*"
     }
 }

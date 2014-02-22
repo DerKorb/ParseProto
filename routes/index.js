@@ -172,7 +172,7 @@ cacheADay = function()
             cachedDay = -1;
 
         if (cachedDay == parsedDay)
-            return setTimeout(cacheADay, 60*60*1000); // hourly recheck
+            return; // hourly recheck
         console.log(cachedDay+1, "of", parsedDay, "cached");
         var day = cachedDay + 1;
         console.log("caching day", day);
@@ -198,4 +198,9 @@ cacheADay = function()
         });
     });
 }
+
+// Cache new data at 3am:
+var cronJob = require('cron').CronJob;
+var job = new cronJob('00 00 03 * * *', cacheADay);
+
 cacheADay();
