@@ -175,13 +175,16 @@ cacheADay = function()
             return setTimeout(cacheADay, 60*60*1000); // hourly recheck
         console.log(cachedDay+1, "of", parsedDay, "cached");
         var day = cachedDay + 1;
-        console.log(day);
+        console.log("caching day", day);
         btc_parser.getBtsDonations(function()
         {
+            console.log("Updated bitcoin donations from blockexplorer.org");
             generateAgsJson(day, function(ags_result)
             {
+                console.log("queried ags result");
                 generatePtsJson(day, function(pts_result)
                 {
+                    console.log("queried pts result");
                     fs.writeFileSync("cache/"+day+"_"+"pts.json", JSON.stringify(pts_result));
                     connection.query("INSERT INTO caches (type, day) VALUES ?", [[[PTS, day]]], function(err, result) {
                         fs.writeFileSync("cache/"+day+"_"+"ags.json", JSON.stringify(ags_result));
