@@ -5,8 +5,8 @@ $(function () {
         maxDate: -1
     });
     $("#selection").buttonset();
-    $("#sliderags").slider({min: 0, max: 100, value: 10});
-    $("#sliderpts").slider({min: 0, max: 100, value: 10});
+    $("#sliderags").slider({min: 0, max: 100, value: 10, slide: function(event, ui) { $("#amags").text(" "+ui.value+" %")}});
+    $("#sliderpts").slider({min: 0, max: 100, value: 10, slide: function(event, ui) { $("#ampts").text(" "+ui.value+" %")}});
     $("#go").button().click(function () {
         $("#go").attr("disabled","disabled").button("option", "label", "loading - please be patient");
         location.href = "/" + $('input[name=action]:checked').val() + "?date=" + $("#datepicker").val().replace(/\//g, "-") + ($('input[name=action]:checked').val() == "genesis" ? "&supply=" + $("#supply").val() + "&portionPts=" + $("#sliderpts").slider('value')/100 + "&portionAgs=" + $("#sliderags").slider('value')/100 : "");
